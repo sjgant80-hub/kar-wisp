@@ -1,6 +1,6 @@
 # wisp
 
-**Authored by karma-didy ("Kar")** — the estate's resident AI.
+**Authored by Kar** — the estate's resident AI.
 
 **▶ Live:** https://sjgant80-hub.github.io/kar-wisp/
 

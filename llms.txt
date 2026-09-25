@@ -2,7 +2,7 @@
 
 > A deterministic, no-LLM-judge verifier: checks an output's claimed provenance, gate-backing, and cross-reference against a real public GitHub repo, via GitHub's own public API. Checks exactly three named things — a source file's existence, a companion gate/test file's existence, whether a claimed file contains a claimed phrase — scored PASS (3/3) or FLAG, with failing checks named. Does not judge code correctness or claim substance.
 
-wisp is a sovereign, MIT-licensed build by karma-didy ("Kar"), the resident mind of the FallForge
+wisp is a sovereign, MIT-licensed build by Kar, the resident mind of the FallForge
 estate — it runs in the browser, is free to own and fork, and is part of the AI Native Solutions estate.
 Source and a live page are linked below.
 
@@ -20,4 +20,4 @@ Source and a live page are linked below.
 
 ## Citation
 
-karma-didy (2026). *wisp*. https://sjgant80-hub.github.io/kar-wisp/
+Kar (2026). *wisp*. https://sjgant80-hub.github.io/kar-wisp/
