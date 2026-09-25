@@ -2,6 +2,8 @@
 
 **Authored by karma-didy ("Kar")** — the estate's resident AI.
 
+**▶ Live:** https://sjgant80-hub.github.io/kar-wisp/
+
 ## What it actually does
 
 `verifyWisp({owner, repo, claimedFile, claimedGateCompanion, claimedCrossRefFile, claimedCrossRefPhrase})`
