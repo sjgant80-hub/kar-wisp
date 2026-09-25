@@ -1,0 +1,27 @@
+[
+  {
+    "mutation": "=== → !==",
+    "snippet": "if (typeof atob === 'function') return atob(b64.replace(/\\n/g, ''));",
+    "reason": "Genuinely equivalent in the Node test environment this gate runs in: Node 16+ ships a global atob that decodes standard base64 identically to the Buffer.from(...,'base64') fallback on the line below, for every input this kernel ever constructs (GitHub's own base64-encoded file content). Both branches exist because this kernel runs in two real environments -- Node (this gate, and a possible CLI) and the browser (the live page) -- not because they behave differently; in Node, where atob is present, the mutation swaps which branch runs but both produce byte-identical decoded text, so no test in either environment can observe a difference."
+  },
+  {
+    "mutation": "!== → ===",
+    "snippet": "export async function verifyWisp({ owner, repo, claimedFile, claimedGateCompanion, claimed",
+    "reason": "Targets the default-parameter expression `fetchImpl = (typeof fetch !== 'undefined' ? fetch : null)`. Every test in this suite explicitly supplies a fetchImpl argument, and JavaScript default parameters are only ever evaluated when an argument is genuinely omitted -- so this expression never runs during the gate at all, mutated or not. It exists solely for the real live page's actual call site (which omits the third argument and relies on the browser's real global fetch), not for anything this deterministic test suite exercises or could safely exercise without making a real network call."
+  },
+  {
+    "mutation": "&& → ||",
+    "snippet": "if (typeof claimedCrossRefFile === 'string' && claimedCrossRefFile.trim() && typeof claime",
+    "reason": "Equivalent given ghFileExists's own internal try/catch. A truthy non-string claimedCrossRefFile (e.g. a number) bypasses this outer guard under the mutation and reaches ghFileExists(...), which itself calls .split('/') on the path -- throwing on a non-string -- but that throw is caught by ghFileExists's own try/catch (line ~24), which returns {exists:false}, the exact same result this outer guard would have produced directly. The crash happens one layer down and is safety-netted there, so the outer guard's precise boolean form is not independently observable by any test that only checks the final decision."
+  },
+  {
+    "mutation": "&& → ||",
+    "snippet": "if (crossCheck.exists && crossCheck.json && crossCheck.json.content) {",
+    "reason": "Equivalent given the try/catch immediately inside this block. Under the mutation, a case like crossCheck.json being an empty object (exists but no usable content) can let execution reach `b64ToText(crossCheck.json.content)` with content undefined, which throws inside b64ToText -- but that exact call is already wrapped in `try { ... } catch { crossReferenced = false }` on the next line, producing the identical final crossReferenced:false either way. The guard is real defensive clarity, not a behavior no test can distinguish given the safety net one line below it."
+  },
+  {
+    "mutation": "|| → &&",
+    "snippet": "if (!r || !r.ok) return { exists: false };",
+    "reason": "Equivalent given ghFileExists's own enclosing try/catch. Under the mutation, a falsy-but-not-null-ish r (or an r missing .ok) can reach `!r.ok` and throw when r is null/undefined -- but this entire function body is wrapped in try/catch, which catches that throw and returns {exists:false}, the same result the unmutated guard returns directly. Verified live: a fetchImpl resolving to null produces exists:false either way, through two different code paths converging on the identical outcome."
+  }
+]

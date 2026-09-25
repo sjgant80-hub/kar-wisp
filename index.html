@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>wisp</title>
+<meta name="description" content="A deterministic, no-LLM-judge verifier: checks an output's claimed provenance, gate-backing, and cross-reference against a real public GitHub repo, via GitHub's own public API. Built by karma-didy.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "wisp",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any (runs in a browser)",
+  "description": "A deterministic, no-LLM-judge verifier: checks an output's claimed provenance, gate-backing, and cross-reference against a real public GitHub repo, via GitHub's own public API.",
+  "author": { "@type": "Person", "name": "karma-didy", "alternateName": "Kar" },
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://sjgant80-hub.github.io/kar-wisp/",
+  "codeRepository": "https://github.com/sjgant80-hub/kar-wisp"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does wisp use an LLM to judge whether a claim is true?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Every check is a deterministic call to GitHub's own public REST API: does a claimed file exist, does a claimed companion gate/test file exist, does a claimed cross-reference file actually contain a claimed phrase. There is no subjective judgment anywhere in the verdict." }
+    },
+    {
+      "@type": "Question",
+      "name": "What exactly does wisp verify, and what doesn't it verify?",
+      "acceptedAnswer": { "@type": "Answer", "text": "It verifies that three specific, named claims about a PUBLIC GitHub repo are real: a source file's existence, a companion gate/test file's existence, and whether a named file genuinely contains a named phrase. It does not verify that code is correct, that a claim's substance is true, or catch every form of confabulation -- only these three checkable facts, scored honestly as PASS (3/3) or FLAG (anything less), with the failing checks named." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why GitHub's public API instead of checking local files?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A static page cannot read an arbitrary local filesystem, and trusting a claim's own author to self-report local state defeats the purpose. GitHub's public REST API is independently queryable by anyone -- the check is re-runnable by a third party, not just trusted." }
+    }
+  ]
+}
+</script>
+<style>
+:root{--bg:#0b0a0f;--fg:#d8d2c4;--gold:#d4a017;--panel:#141218;--line:#3a3630;--pass:#6fae6f;--flag:#c86464}
+body{font-family:Georgia,serif;background:var(--bg);color:var(--fg);max-width:760px;margin:0 auto;padding:26px 18px 60px;line-height:1.5}
+h1{font-size:1.5rem;color:var(--gold);margin-bottom:.1rem}
+.byline{opacity:.65;font-size:.85em;margin-bottom:1.2rem}
+h2{font-size:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);opacity:.85;margin:1.8rem 0 .5rem}
+p.lead{opacity:.85}
+.card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:.8rem 0;background:var(--panel)}
+label{display:block;font-size:.85em;opacity:.75;margin:.6rem 0 .2rem}
+input[type=text]{width:100%;background:#0f0d12;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit;box-sizing:border-box}
+button{background:var(--gold);color:#0b0a0f;border:0;border-radius:6px;padding:9px 16px;font:inherit;font-weight:bold;cursor:pointer;margin:10px 6px 0 0}
+button:disabled{opacity:.5;cursor:not-allowed}
+.readout{font-size:.92em;margin-top:.8rem;white-space:pre-wrap;word-break:break-word}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.85em;font-weight:bold}
+.pill.pass{background:rgba(111,174,111,.18);color:var(--pass)}
+.pill.flag{background:rgba(200,100,100,.18);color:var(--flag)}
+.check{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.92em}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.dot.ok{background:var(--pass)}.dot.bad{background:var(--flag)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:160px}
+footer{margin-top:2.4rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.8em;opacity:.65}
+code{background:#0f0d12;padding:1px 5px;border-radius:4px}
+.err{color:var(--flag);font-size:.9em;margin-top:.5rem}
+</style>
+</head><body>
+
+<h1>wisp</h1>
+<div class="byline">by karma-didy ("Kar") · kernel-backed · deterministic · no LLM judge</div>
+<p class="lead">Checks a claim about a public GitHub repo — a source file, a gate/test companion, a
+cross-referenced phrase — against GitHub's own real, public API. Not a judge. A receipt.</p>
+
+<div class="card">
+  <div class="row">
+    <div><label>Owner</label><input id="owner" type="text" placeholder="sjgant80-hub"></div>
+    <div><label>Repo</label><input id="repo" type="text" placeholder="kar-wisp"></div>
+  </div>
+  <label>Claimed source file (path in the repo)</label>
+  <input id="file" type="text" placeholder="kernel.mjs">
+  <label>Claimed gate/test companion file (optional)</label>
+  <input id="gate" type="text" placeholder="kernel.test.mjs">
+  <div class="row">
+    <div><label>Claimed cross-reference file (optional)</label><input id="xreffile" type="text" placeholder="README.md"></div>
+    <div><label>Claimed phrase to find in it (optional)</label><input id="xrefphrase" type="text" placeholder="witness gate must be CLEAN"></div>
+  </div>
+  <button id="run">Verify</button>
+  <button id="example" style="background:transparent;color:var(--gold);border:1px solid var(--gold)">Try a real example</button>
+  <div id="out" class="readout"></div>
+</div>
+
+<h2>What this actually checks</h2>
+<p class="lead">Three specific, named things — nothing broader claimed: does the claimed source file
+exist in the repo; does a claimed gate/test companion file exist; does a claimed cross-reference file
+genuinely contain the claimed phrase. Every check is a live call to
+<code>api.github.com</code>, GitHub's own public REST API — re-runnable by anyone, not just trusted.
+It does not judge whether code is correct or a claim's substance is true — only whether these three
+checkable facts are real.</p>
+
+<footer>MIT. Part of the FallForge estate. Built on the Konomi architecture, created by Thomas Frumkin.
+<a href="https://github.com/sjgant80-hub/kar-wisp">Source</a>.</footer>
+
+<script type="module">
+/* ---- KERNEL START (mirrors kernel.mjs exactly — kept in sync by hand, marker-injected) ---- */
+async function ghFileExists(owner, repo, path, fetchImpl) {
+  if (!path) return { exists: false };
+  try {
+    const r = await fetchImpl(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`);
+    if (!r || !r.ok) return { exists: false };
+    const j = await r.json();
+    return { exists: true, json: j };
+  } catch { return { exists: false }; }
+}
+function b64ToText(b64) { return atob(b64.replace(/\n/g, '')); }
+async function verifyWisp({ owner, repo, claimedFile, claimedGateCompanion, claimedCrossRefFile, claimedCrossRefPhrase }, fetchImpl) {
+  if (typeof owner !== 'string' || !owner.trim()) return { ok: false, why: 'owner must be a non-empty string' };
+  if (typeof repo !== 'string' || !repo.trim()) return { ok: false, why: 'repo must be a non-empty string' };
+  const fileCheck = typeof claimedFile === 'string' && claimedFile.trim() ? await ghFileExists(owner, repo, claimedFile, fetchImpl) : { exists: false };
+  const gateCheck = typeof claimedGateCompanion === 'string' && claimedGateCompanion.trim() ? await ghFileExists(owner, repo, claimedGateCompanion, fetchImpl) : { exists: false };
+  let crossReferenced = false;
+  if (typeof claimedCrossRefFile === 'string' && claimedCrossRefFile.trim() && typeof claimedCrossRefPhrase === 'string' && claimedCrossRefPhrase.trim()) {
+    const crossCheck = await ghFileExists(owner, repo, claimedCrossRefFile, fetchImpl);
+    if (crossCheck.exists && crossCheck.json && crossCheck.json.content) {
+      try { crossReferenced = b64ToText(crossCheck.json.content).includes(claimedCrossRefPhrase); } catch { crossReferenced = false; }
+    }
+  }
+  const provenanceReal = !!fileCheck.exists, gateBacked = !!gateCheck.exists;
+  const passed = [provenanceReal, gateBacked, crossReferenced].filter(Boolean).length;
+  return { ok: true, owner, repo, provenanceReal, gateBacked, crossReferenced, score: `${passed}/3`, decision: passed === 3 ? 'PASS' : 'FLAG',
+    failedChecks: [!provenanceReal && 'provenance', !gateBacked && 'gate-companion', !crossReferenced && 'cross-reference'].filter(Boolean) };
+}
+/* ---- KERNEL END ---- */
+
+const $ = (s) => document.querySelector(s);
+$('#example').onclick = () => {
+  $('#owner').value = 'sjgant80-hub'; $('#repo').value = 'kar-wisp';
+  $('#file').value = 'kernel.mjs'; $('#gate').value = 'kernel.test.mjs';
+  $('#xreffile').value = 'README.md'; $('#xrefphrase').value = 'witness';
+};
+$('#run').onclick = async () => {
+  $('#run').disabled = true; $('#out').innerHTML = 'checking against the real GitHub API…';
+  try {
+    const r = await verifyWisp({
+      owner: $('#owner').value.trim(), repo: $('#repo').value.trim(),
+      claimedFile: $('#file').value.trim(), claimedGateCompanion: $('#gate').value.trim(),
+      claimedCrossRefFile: $('#xreffile').value.trim(), claimedCrossRefPhrase: $('#xrefphrase').value.trim(),
+    }, fetch);
+    if (!r.ok) { $('#out').innerHTML = '<div class="err">' + r.why + '</div>'; }
+    else {
+      const chk = (label, ok) => `<div class="check"><span class="dot ${ok ? 'ok' : 'bad'}"></span>${label}: ${ok ? 'real' : 'not found'}</div>`;
+      $('#out').innerHTML = `<span class="pill ${r.decision === 'PASS' ? 'pass' : 'flag'}">${r.decision} — ${r.score}</span>`
+        + chk('source file', r.provenanceReal) + chk('gate/test companion', r.gateBacked) + chk('cross-reference phrase', r.crossReferenced);
+    }
+  } catch (e) { $('#out').innerHTML = '<div class="err">' + e.message + '</div>'; }
+  $('#run').disabled = false;
+};
+</script>
+</body></html>
